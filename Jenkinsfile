@@ -6,9 +6,9 @@ pipeline {
     }
 
     environment {
-        DOCKERHUB_USER = "ajith7353"
-        IMAGE_NAME     = "springboot-ci-cd"
-        IMAGE_TAG      = "${BUILD_NUMBER}"
+        DOCKERHUB_USER  = "ajith7353"
+        IMAGE_NAME      = "springboot-ci-cd"
+        IMAGE_TAG       = "%BUILD_NUMBER%"
         CONTAINER_COUNT = 100
     }
 
@@ -26,15 +26,13 @@ pipeline {
 
         stage('Maven Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                bat 'mvn clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}")
-                }
+                bat "docker build -t %DOCKERHUB_USER%/%IMAGE_NAME%:%BUILD_NUMBER% ."
             }
         }
 
@@ -42,40 +40,42 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'ajith7353',
-                    passwordVariable: 'Ajith@123'
+                    ajith7353: 'DOCKER_USER',
+                    Ajith@123: 'DOCKER_PASS'
                 )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
                 }
             }
         }
 
         stage('Push Image to Docker Hub') {
             steps {
-                script {
-                    docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}").push()
-                    docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}").push("latest")
-                }
+                bat """
+                docker push %DOCKERHUB_USER%/%IMAGE_NAME%:%BUILD_NUMBER%
+                docker tag %DOCKERHUB_USER%/%IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_USER%/%IMAGE_NAME%:latest
+                docker push %DOCKERHUB_USER%/%IMAGE_NAME%:latest
+                """
             }
         }
 
         stage('Deploy Multiple Containers') {
             steps {
-                script {
-                    sh '''
-                    docker rm -f $(docker ps -aq --filter "name=${IMAGE_NAME}") 2>/dev/null || true
-
-                    for i in $(seq 1 ${CONTAINER_COUNT})
-                    do
-                      docker run -d \
-                        --name ${IMAGE_NAME}_$i \
-                        -p $((8000 + i)):8080 \
-                        ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
-                    done
-                    '''
-                }
+                bat """
+                FOR /L %%i IN (1,1,%CONTAINER_COUNT%) DO (
+                  docker rm -f %IMAGE_NAME%_%%i 2>nul
+                  docker run -d --name %IMAGE_NAME%_%%i -p 80%%i:8080 %DOCKERHUB_USER%/%IMAGE_NAME%:%BUILD_NUMBER%
+                )
+                """
             }
         }
     }
-}
 
+    post {
+        success {
+            echo "✅ CI/CD Pipeline completed successfully on Windows"
+        }
+        failure {
+            echo "❌ Pipeline failed"
+        }
+    }
+}
