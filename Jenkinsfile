@@ -1,6 +1,6 @@
 pipeline {
     agent {
-          label: agent-Vikram
+          label: agent-vikram
    }
 
     environment {
