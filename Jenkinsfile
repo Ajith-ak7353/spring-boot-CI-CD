@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+          label: agent-Vikram
+   }
 
     environment {
         IMAGE_NAME      = "springboot-ci-cd"
