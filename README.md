@@ -62,6 +62,15 @@ This project follows **real-world DevOps practices** and is suitable for product
 
 ---
 
+
+## 📌 Key Highlights
+✔ End-to-end CI/CD automation  
+✔ GitHub Webhook triggered builds  
+✔ Dockerized Spring Boot application  
+✔ Scalable multi-container deployment  
+✔ Production-style DevOps workflow  
+
+
 ### 🔹 Clone the Repository
 ```bash
 git clone https://github.com/your-username/springboot-jenkins-docker-cicd.git
