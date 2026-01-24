@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  springboot-app:
+    image: YOUR_DOCKERHUB_USERNAME/springboot-ci-cd:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: springboot_app
+    ports:
+      - "9090:9090"
+    restart: always
