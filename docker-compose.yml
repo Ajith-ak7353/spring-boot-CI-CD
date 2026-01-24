@@ -2,7 +2,8 @@ version: "3.8"
 
 services:
   springboot-app:
-    image: YOUR_DOCKERHUB_USERNAME/springboot-ci-cd:latest
+    image: ajithak7353/springboot-ci-cd:latest
+
     build:
       context: .
       dockerfile: Dockerfile
