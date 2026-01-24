@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   springboot-app:
-    image: ajithak7353/springboot-ci-cd:latest
+    image: ajithak7353/springcicd:latest
 
     build:
       context: .
