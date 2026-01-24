@@ -4,8 +4,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME      = "springboot-ci-cd"
-        CONTAINER_COUNT = 1
+        DOCKERHUB_REPO = "ajith7353/springboot-ci-cd"
     }
 
     triggers {
@@ -23,42 +22,89 @@ pipeline {
         stage('Maven Build') {
             steps {
                 sh '''
-                    mvn -version
-                    mvn clean package -DskipTests
+                    mvn clean package
                 '''
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Compose Build') {
             steps {
                 sh '''
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                    docker-compose build
                 '''
             }
         }
 
-        stage('Deploy Container') {
-            steps {
+     stage('Push Image to Docker Hub') {
+    steps {
+        script {
+            withDockerRegistry(
+                credentialsId: 'd8b583d2-9b88-424c-b261-a0c8a29cc954',
+                url: 'https://index.docker.io/v1/'
+            ) {
                 sh '''
-                    docker rm -f ${IMAGE_NAME}_1 2>/dev/null || true
-
-                    docker run -d \
-                      --name ${IMAGE_NAME}_1 \
-                      -p 9090:9090 \
-                      ${IMAGE_NAME}:${BUILD_NUMBER}
+                    docker-compose push
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Pipeline executed successfully"
-        }
-        failure {
-            echo "❌ Pipeline failed"
         }
     }
 }
 
+        stage('Deploy using Docker Compose') {
+            steps {
+                sh '''
+                    docker-compose down
+                    docker-compose pull
+                    docker-compose up -d
+                '''
+            }
+        }
+    }
+
+   post {
+    success {
+        emailext (
+            subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+            body: """
+
+The Jenkins pipeline has completed SUCCESSFULLY.
+
+Job Name   : ${JOB_NAME}
+Build No   : ${BUILD_NUMBER}
+Status     : SUCCESS
+Git Branch : ${GIT_BRANCH}
+
+Docker Image:
+${DOCKERHUB_REPO}:latest
+
+Build URL:
+${BUILD_URL}
+
+Jenkins CI/CD
+""",
+            to: "jabaraj626@gmail.com"
+        )
+    }
+
+    failure {
+        emailext (
+            subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+            body: """
+
+The Jenkins pipeline has FAILED.
+
+Job Name   : ${JOB_NAME}
+Build No   : ${BUILD_NUMBER}
+Status     : FAILURE
+
+Please check the console logs:
+${BUILD_URL}
+
+
+Jenkins CI/CD
+""",
+            to: "jabaraj626@gmail.com"
+        )
+    }
+}
 
